@@ -259,19 +259,28 @@ local function button(parent, props)
 	btn.Font = Enum.Font.GothamBold
 	btn.TextColor3 = COLORS.text
 	btn.BackgroundColor3 = COLORS.accent
+	btn.Active = true
+	btn.Selectable = true
 	for k, v in pairs(props) do btn[k] = v end
 	corner(btn, 10)
 	btn.Parent = parent
 
 	local baseColor = props.BackgroundColor3 or COLORS.accent
+	btn:SetAttribute("BaseColor", baseColor)
+
 	btn.MouseEnter:Connect(function()
+		local currentBase = btn:GetAttribute("BaseColor") or baseColor
+		local r = math.min(currentBase.R + 0.12, 1)
+		local g = math.min(currentBase.G + 0.12, 1)
+		local b = math.min(currentBase.B + 0.12, 1)
 		TweenService:Create(btn, TweenInfo.new(0.15), {
-			BackgroundColor3 = Color3.fromRGB(130, 155, 255),
+			BackgroundColor3 = Color3.new(r, g, b),
 		}):Play()
 	end)
 	btn.MouseLeave:Connect(function()
+		local currentBase = btn:GetAttribute("BaseColor") or baseColor
 		TweenService:Create(btn, TweenInfo.new(0.15), {
-			BackgroundColor3 = baseColor,
+			BackgroundColor3 = currentBase,
 		}):Play()
 	end)
 	return btn
@@ -449,6 +458,7 @@ scriptList.BorderSizePixel     = 0
 scriptList.ScrollBarThickness  = 4
 scriptList.CanvasSize          = UDim2.fromOffset(0, 0)
 scriptList.AutomaticCanvasSize = Enum.AutomaticSize.Y
+scriptList.ZIndex              = 2
 scriptList.Parent              = hubScreen
 
 local listLayout = Instance.new("UIListLayout")
@@ -486,6 +496,7 @@ local function showHub(expiresAt)
 		card.BackgroundColor3 = Color3.fromRGB(13, 20, 36)
 		card.BorderSizePixel  = 0
 		card.LayoutOrder      = i
+		card.ZIndex           = 3
 		card.Parent           = scriptList
 		corner(card, 12)
 		stroke(card, COLORS.border, 1)
@@ -496,6 +507,7 @@ local function showHub(expiresAt)
 			Text     = scriptInfo.name,
 			TextSize = 15,
 			Font     = Enum.Font.GothamBold,
+			ZIndex   = 4,
 		})
 		label(card, {
 			Position    = UDim2.fromOffset(0, 24),
@@ -504,6 +516,7 @@ local function showHub(expiresAt)
 			TextSize    = 11,
 			TextColor3  = COLORS.muted,
 			TextWrapped = true,
+			ZIndex      = 4,
 		})
 
 		local loadBtn
@@ -514,18 +527,22 @@ local function showHub(expiresAt)
 				Text             = scriptInfo.enabled and "เปิด" or "ปิด",
 				TextSize         = 13,
 				BackgroundColor3 = scriptInfo.enabled and COLORS.ok or Color3.fromRGB(80, 80, 80),
+				ZIndex           = 5,
 			})
 			if scriptInfo.enabled then
 				loadBtn.TextColor3 = Color3.fromRGB(10, 20, 30)
 			end
 
-			loadBtn.MouseButton1Click:Connect(function()
+			loadBtn.Activated:Connect(function()
 				scriptInfo.enabled = not scriptInfo.enabled
 				scriptInfo:onToggle(scriptInfo.enabled)
 				loadBtn.Text = scriptInfo.enabled and "เปิด" or "ปิด"
 
+				local targetColor = scriptInfo.enabled and COLORS.ok or Color3.fromRGB(80, 80, 80)
+				loadBtn:SetAttribute("BaseColor", targetColor)
+
 				TweenService:Create(loadBtn, TweenInfo.new(0.2), {
-					BackgroundColor3 = scriptInfo.enabled and COLORS.ok or Color3.fromRGB(80, 80, 80),
+					BackgroundColor3 = targetColor,
 				}):Play()
 				if scriptInfo.enabled then
 					TweenService:Create(loadBtn, TweenInfo.new(0.2), {
@@ -544,10 +561,11 @@ local function showHub(expiresAt)
 				Text             = "โหลด",
 				TextSize         = 13,
 				BackgroundColor3 = COLORS.accent2,
+				ZIndex           = 5,
 			})
 			loadBtn.TextColor3 = Color3.fromRGB(10, 20, 30)
 
-			loadBtn.MouseButton1Click:Connect(function()
+			loadBtn.Activated:Connect(function()
 				loadBtn.Text = "..."
 				task.spawn(function()
 					local success, err = pcall(function()
