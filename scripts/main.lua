@@ -12,7 +12,12 @@ local SCRIPTS = {
 	{
 		name = "Monster Bring",
 		desc = "ดึงมอนสเตอร์มาหาตัวละครของคุณ รองรับ Anti-Kick",
-		url  = "https://raw.githubusercontent.com/sim-aaa/key-hub/refs/heads/main/scripts/monster-bring.lua",
+		isToggle = true,
+		enabled = false,
+		onToggle = function(self, state)
+			_G.MonsterBringEnabled = state
+			return state
+		end
 	},
 }
 -- ================================
@@ -21,9 +26,106 @@ local Players          = game:GetService("Players")
 local HttpService      = game:GetService("HttpService")
 local TweenService     = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
+local RunService       = game:GetService("RunService")
 
 local player    = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
+
+-- Clean up previous execution to prevent resource leaks/duplicate loops
+if _G.MonsterBringHeartbeat then
+	_G.MonsterBringHeartbeat:Disconnect()
+	_G.MonsterBringHeartbeat = nil
+end
+_G.MonsterBringEnabled = false
+local currentSession = {}
+_G.MonsterBringSession = currentSession
+
+-- ---------- Monster Bring Logic ----------
+local monsterCache = {}
+local MAX_TARGETS = 12
+
+local function updateMonsterCache()
+	if not _G.MonsterBringEnabled then return end
+	table.clear(monsterCache)
+	local counter = 0
+	for _, obj in ipairs(workspace:GetDescendants()) do
+		if counter >= MAX_TARGETS then break end
+		if obj:IsA("Model") and obj ~= player.Character and obj:FindFirstChild("Humanoid") then
+			if not Players:GetPlayerFromCharacter(obj) then
+				local hum = obj:FindFirstChildOfClass("Humanoid")
+				local rootPart = obj:FindFirstChild("HumanoidRootPart") or obj:FindFirstChild("Torso")
+				if hum and rootPart and hum.Health > 0 then
+					table.insert(monsterCache, {part = rootPart, hum = hum})
+					counter = counter + 1
+				end
+			end
+		end
+	end
+end
+
+-- AntiGravity lock loop
+_G.MonsterBringHeartbeat = RunService.Heartbeat:Connect(function()
+	if _G.MonsterBringEnabled then
+		local myChar = player.Character
+		local myRoot = myChar and (myChar:FindFirstChild("HumanoidRootPart") or myChar:FindFirstChild("Torso"))
+		
+		if myRoot then
+			if not myRoot:FindFirstChild("AntiGravity") then
+				local bv = Instance.new("BodyVelocity")
+				bv.Name = "AntiGravity"
+				bv.Velocity = Vector3.new(0, 0, 0)
+				bv.MaxForce = Vector3.new(0, math.huge, 0)
+				bv.Parent = myRoot
+			end
+		end
+	else
+		local myChar = player.Character
+		local myRoot = myChar and (myChar:FindFirstChild("HumanoidRootPart") or myChar:FindFirstChild("Torso"))
+		if myRoot and myRoot:FindFirstChild("AntiGravity") then
+			myRoot.AntiGravity:Destroy()
+		end
+	end
+end)
+
+-- Cache update thread (exits if session changes)
+task.spawn(function()
+	while _G.MonsterBringSession == currentSession do
+		task.wait(2.0)
+		if _G.MonsterBringEnabled then
+			updateMonsterCache()
+		end
+	end
+end)
+
+-- Monster warp thread (exits if session changes)
+task.spawn(function()
+	while _G.MonsterBringSession == currentSession do
+		task.wait(0.15)
+		if _G.MonsterBringEnabled then
+			local myChar = player.Character
+			local myRoot = myChar and (myChar:FindFirstChild("HumanoidRootPart") or myChar:FindFirstChild("Torso"))
+			if myRoot then
+				local basePosition = myRoot.CFrame * CFrame.new(0, -6, -5)
+				for i = #monsterCache, 1, -1 do
+					local monster = monsterCache[i]
+					local part = monster.part
+					local hum = monster.hum
+					if part and part.Parent and hum and hum.Health > 0 then
+						local randomOffset = Vector3.new(math.random(-10, 10)/10, 0, math.random(-10, 10)/10)
+						part.CFrame = CFrame.lookAt(basePosition.Position + randomOffset, basePosition.Position + myRoot.CFrame.LookVector)
+						part.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+						part.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+						if hum.WalkSpeed ~= 0 then
+							hum.WalkSpeed = 0
+						end
+					else
+						table.remove(monsterCache, i)
+					end
+				end
+			end
+		end
+	end
+end)
 
 -- ---------- HTTP helper (Xeno / Delta / Synapse / KRNL) ----------
 
@@ -404,37 +506,70 @@ local function showHub(expiresAt)
 			TextWrapped = true,
 		})
 
-		local loadBtn = button(card, {
-			Position         = UDim2.new(1, -76, 0.5, -16),
-			Size             = UDim2.fromOffset(72, 32),
-			Text             = "โหลด",
-			TextSize         = 13,
-			BackgroundColor3 = COLORS.accent2,
-		})
-		loadBtn.TextColor3 = Color3.fromRGB(10, 20, 30)
+		local loadBtn
+		if scriptInfo.isToggle then
+			loadBtn = button(card, {
+				Position         = UDim2.new(1, -76, 0.5, -16),
+				Size             = UDim2.fromOffset(72, 32),
+				Text             = scriptInfo.enabled and "เปิด" or "ปิด",
+				TextSize         = 13,
+				BackgroundColor3 = scriptInfo.enabled and COLORS.ok or Color3.fromRGB(80, 80, 80),
+			})
+			if scriptInfo.enabled then
+				loadBtn.TextColor3 = Color3.fromRGB(10, 20, 30)
+			end
 
-		loadBtn.MouseButton1Click:Connect(function()
-			loadBtn.Text = "..."
-			task.spawn(function()
-				local success, err = pcall(function()
-					if scriptInfo.url then
-						local src = httpGet(scriptInfo.url)
-						if not src or src == "" then error("โหลดสคริปต์ไม่ได้ ตรวจ URL") end
-						local fn, loadErr = loadstring(src)
-						if not fn then error(loadErr) end
-						fn()
-					elseif scriptInfo.run then
-						scriptInfo.run()
-					end
-				end)
-				loadBtn.Text = success and "✓" or "!"
-				if not success then
-					warn("[Hub] " .. scriptInfo.name .. ": " .. tostring(err))
+			loadBtn.MouseButton1Click:Connect(function()
+				scriptInfo.enabled = not scriptInfo.enabled
+				scriptInfo:onToggle(scriptInfo.enabled)
+				loadBtn.Text = scriptInfo.enabled and "เปิด" or "ปิด"
+
+				TweenService:Create(loadBtn, TweenInfo.new(0.2), {
+					BackgroundColor3 = scriptInfo.enabled and COLORS.ok or Color3.fromRGB(80, 80, 80),
+				}):Play()
+				if scriptInfo.enabled then
+					TweenService:Create(loadBtn, TweenInfo.new(0.2), {
+						TextColor3 = Color3.fromRGB(10, 20, 30),
+					}):Play()
+				else
+					TweenService:Create(loadBtn, TweenInfo.new(0.2), {
+						TextColor3 = COLORS.text,
+					}):Play()
 				end
-				task.wait(1.5)
-				loadBtn.Text = "โหลด"
 			end)
-		end)
+		else
+			loadBtn = button(card, {
+				Position         = UDim2.new(1, -76, 0.5, -16),
+				Size             = UDim2.fromOffset(72, 32),
+				Text             = "โหลด",
+				TextSize         = 13,
+				BackgroundColor3 = COLORS.accent2,
+			})
+			loadBtn.TextColor3 = Color3.fromRGB(10, 20, 30)
+
+			loadBtn.MouseButton1Click:Connect(function()
+				loadBtn.Text = "..."
+				task.spawn(function()
+					local success, err = pcall(function()
+						if scriptInfo.url then
+							local src = httpGet(scriptInfo.url)
+							if not src or src == "" then error("โหลดสคริปต์ไม่ได้ ตรวจ URL") end
+							local fn, loadErr = loadstring(src)
+							if not fn then error(loadErr) end
+							fn()
+						elseif scriptInfo.run then
+							scriptInfo.run()
+						end
+					end)
+					loadBtn.Text = success and "✓" or "!"
+					if not success then
+						warn("[Hub] " .. scriptInfo.name .. ": " .. tostring(err))
+					end
+					task.wait(1.5)
+					loadBtn.Text = "โหลด"
+				end)
+			end)
+		end
 	end
 end
 
