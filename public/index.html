@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Key Hub - รับ Key</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b1020;
+      --card: #141b2d;
+      --accent: #6c8cff;
+      --accent-2: #4fd1c5;
+      --text: #e8eefc;
+      --muted: #9aa7c7;
+      --danger: #ff6b6b;
+      --ok: #51cf66;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, Segoe UI, sans-serif;
+      background: radial-gradient(circle at top, #1a2450, var(--bg));
+      color: var(--text);
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+
+    .card {
+      width: min(520px, 100%);
+      background: rgba(20, 27, 45, 0.95);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 20px;
+      padding: 28px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 1.8rem;
+    }
+
+    p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .actions {
+      display: grid;
+      gap: 12px;
+      margin-top: 24px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 12px;
+      padding: 14px 16px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.15s ease, opacity 0.15s ease;
+    }
+
+    button:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    .primary {
+      background: linear-gradient(135deg, var(--accent), #8da2ff);
+      color: white;
+    }
+
+    .secondary {
+      background: #1f2942;
+      color: var(--text);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .status {
+      margin-top: 20px;
+      padding: 14px 16px;
+      border-radius: 12px;
+      background: #10182b;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      min-height: 52px;
+      white-space: pre-wrap;
+    }
+
+    .key-box {
+      margin-top: 16px;
+      padding: 16px;
+      border-radius: 12px;
+      background: #0d1424;
+      border: 1px dashed rgba(79, 209, 197, 0.5);
+      display: none;
+    }
+
+    .key-box.show { display: block; }
+
+    .key-value {
+      font-family: Consolas, monospace;
+      font-size: 1.05rem;
+      color: var(--accent-2);
+      word-break: break-all;
+      margin: 8px 0 12px;
+    }
+
+    .small {
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    .ok { color: var(--ok); }
+    .err { color: var(--danger); }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>Script Hub Key</h1>
+    <p>กดปุ่มด้านล่างเพื่อเริ่มรับ Key ใช้งานได้ 24 ชั่วโมง ระบบจะสร้าง Key ให้อัตโนมัติเมื่อรอครบ</p>
+
+    <div class="actions">
+      <button id="startBtn" class="primary">เริ่มรับ Key</button>
+      <button id="copyBtn" class="secondary" disabled>คัดลอก Key</button>
+    </div>
+
+    <div id="status" class="status">พร้อมเริ่ม</div>
+
+    <div id="keyBox" class="key-box">
+      <div class="small">Key ของคุณ</div>
+      <div id="keyValue" class="key-value"></div>
+      <div id="expireText" class="small"></div>
+    </div>
+  </main>
+
+  <script>
+    const API_BASE = window.location.origin;
+
+    const startBtn = document.getElementById("startBtn");
+    const copyBtn = document.getElementById("copyBtn");
+    const statusEl = document.getElementById("status");
+    const keyBox = document.getElementById("keyBox");
+    const keyValue = document.getElementById("keyValue");
+    const expireText = document.getElementById("expireText");
+
+    let challengeId = null;
+    let readyAtMs = 0;
+    let waitTimer = null;
+    let claiming = false;
+
+    function setStatus(text, type = "") {
+      statusEl.textContent = text;
+      statusEl.className = "status " + type;
+    }
+
+    function clearWaitTimer() {
+      if (waitTimer) {
+        clearInterval(waitTimer);
+        waitTimer = null;
+      }
+    }
+
+    async function postJson(path, body = {}) {
+      const res = await fetch(`${API_BASE}/api/${path}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      return res.json();
+    }
+
+    function getSecondsLeft() {
+      return Math.max(0, Math.ceil((readyAtMs - Date.now()) / 1000));
+    }
+
+    async function claimKey() {
+      if (!challengeId || claiming) return;
+
+      claiming = true;
+      setStatus("กำลังสร้าง Key...", "");
+
+      try {
+        const data = await postJson("generate-key", { challenge_id: challengeId });
+
+        if (!data.ok) {
+          const retryAfter = Number(data.retry_after_seconds || 0);
+          if (retryAfter > 0) {
+            readyAtMs = Date.now() + retryAfter * 1000;
+            setStatus(`รออีก ${retryAfter} วินาที...`, "");
+            claiming = false;
+            scheduleClaim();
+            return;
+          }
+          throw new Error(data.message || "สร้าง Key ไม่สำเร็จ");
+        }
+
+        keyValue.textContent = data.key;
+        expireText.textContent = `หมดอายุ: ${new Date(data.expires_at).toLocaleString("th-TH")}`;
+        keyBox.classList.add("show");
+        copyBtn.disabled = false;
+        setStatus("ได้ Key แล้ว คัดลอกไปใส่ใน Script ได้เลย", "ok");
+        startBtn.disabled = false;
+        challengeId = null;
+      } catch (err) {
+        setStatus(err.message, "err");
+        startBtn.disabled = false;
+      } finally {
+        claiming = false;
+      }
+    }
+
+    function scheduleClaim() {
+      clearWaitTimer();
+
+      waitTimer = setInterval(() => {
+        const left = getSecondsLeft();
+        if (left > 0) {
+          setStatus(`กำลังรอ ${left} วินาที...`, "");
+          return;
+        }
+
+        clearWaitTimer();
+        claimKey();
+      }, 250);
+    }
+
+    startBtn.addEventListener("click", async () => {
+      startBtn.disabled = true;
+      copyBtn.disabled = true;
+      keyBox.classList.remove("show");
+      clearWaitTimer();
+      challengeId = null;
+      claiming = false;
+
+      try {
+        const data = await postJson("gate-start");
+        if (!data.ok) throw new Error(data.message || "เริ่ม gate ไม่สำเร็จ");
+
+        challengeId = data.challenge_id;
+        const waitSeconds = Number(data.wait_seconds || 15);
+        readyAtMs = Date.now() + waitSeconds * 1000 + 1500;
+
+        const left = getSecondsLeft();
+        setStatus(left > 0 ? `กำลังรอ ${left} วินาที...` : "กำลังสร้าง Key...", "");
+        scheduleClaim();
+      } catch (err) {
+        setStatus(err.message, "err");
+        startBtn.disabled = false;
+      }
+    });
+
+    copyBtn.addEventListener("click", async () => {
+      if (!keyValue.textContent) return;
+      await navigator.clipboard.writeText(keyValue.textContent);
+      setStatus("คัดลอก Key แล้ว", "ok");
+    });
+  </script>
+</body>
+</html>
