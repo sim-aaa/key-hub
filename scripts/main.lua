@@ -295,6 +295,7 @@ local screenGui = Instance.new("ScreenGui")
 screenGui.Name           = "KeyHubGui"
 screenGui.ResetOnSpawn   = false
 screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+screenGui.DisplayOrder = 999
 screenGui.Parent         = playerGui
 
 local root = Instance.new("Frame")
