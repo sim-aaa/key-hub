@@ -10,22 +10,9 @@ local HUB_NAME       = "Script Hub"
 
 local SCRIPTS = {
 	{
-		name = "Universal Aimbot",
-		desc = "ตัวอย่างสคริปต์ — แก้เป็น URL จริงของคุณ",
-		url  = nil,
-		run  = function() print("[Hub] Universal Aimbot loaded (demo)") end,
-	},
-	{
-		name = "ESP Player",
-		desc = "ตัวอย่างสคริปต์ — แก้เป็น URL จริงของคุณ",
-		url  = nil,
-		run  = function() print("[Hub] ESP Player loaded (demo)") end,
-	},
-	{
-		name = "Auto Farm",
-		desc = "ตัวอย่างสคริปต์ — แก้เป็น URL จริงของคุณ",
-		url  = nil,
-		run  = function() print("[Hub] Auto Farm loaded (demo)") end,
+		name = "Monster Bring",
+		desc = "ดึงมอนสเตอร์มาหาตัวละครของคุณ รองรับ Anti-Kick",
+		url  = "https://raw.githubusercontent.com/sim-aaa/key-hub/refs/heads/main/scripts/monster-bring.lua",
 	},
 }
 -- ================================
@@ -41,9 +28,7 @@ local playerGui = player:WaitForChild("PlayerGui")
 -- ---------- HTTP helper (Xeno / Delta / Synapse / KRNL) ----------
 
 local function httpRequest(options)
-	-- Xeno ใช้ชื่อ http_request (underscore)
 	if http_request then return http_request(options) end
-	-- Delta / KRNL / executor ทั่วไป
 	if request then return request(options) end
 	if syn and syn.request then return syn.request(options) end
 	if http and http.request then return http.request(options) end
@@ -51,7 +36,6 @@ local function httpRequest(options)
 end
 
 local function httpGet(url)
-	-- game:HttpGet ใช้ได้เฉพาะ Studio; ใน executor ให้ใช้ httpRequest
 	if syn and syn.request then
 		local res = syn.request({ Url = url, Method = "GET" })
 		return res and res.Body
@@ -106,9 +90,9 @@ local function verifyKey(key)
 	end
 
 	local msg = data.message or "Key ไม่ถูกต้อง"
-	if msg == "Invalid key"      then msg = "Key ไม่ถูกต้อง"
-	elseif msg == "Key expired"  then msg = "Key หมดอายุแล้ว กรุณารับ Key ใหม่จากเว็บ"
-	elseif msg == "HWID mismatch" then msg = "Key นี้ถูกใช้บนเครื่องอื่นแล้ว"
+	if msg == "Invalid key"         then msg = "Key ไม่ถูกต้อง"
+	elseif msg == "Key expired"     then msg = "Key หมดอายุแล้ว กรุณารับ Key ใหม่จากเว็บ"
+	elseif msg == "HWID mismatch"   then msg = "Key นี้ถูกใช้บนเครื่องอื่นแล้ว"
 	elseif msg == "Key is disabled" then msg = "Key ถูกปิดการใช้งาน"
 	end
 
@@ -203,14 +187,14 @@ screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 screenGui.Parent         = playerGui
 
 local root = Instance.new("Frame")
-root.Name            = "Root"
-root.AnchorPoint     = Vector2.new(0.5, 0.5)
-root.Position        = UDim2.fromScale(0.5, 0.5)
-root.Size            = UDim2.fromOffset(420, 500)
+root.Name             = "Root"
+root.AnchorPoint      = Vector2.new(0.5, 0.5)
+root.Position         = UDim2.fromScale(0.5, 0.5)
+root.Size             = UDim2.fromOffset(420, 500)
 root.BackgroundColor3 = COLORS.card
-root.BorderSizePixel = 0
-root.Active          = true
-root.Parent          = screenGui
+root.BorderSizePixel  = 0
+root.Active           = true
+root.Parent           = screenGui
 corner(root, 18)
 stroke(root, COLORS.accent, 1.2)
 
@@ -239,11 +223,11 @@ UserInputService.InputChanged:Connect(function(input)
 end)
 
 local closeBtn = button(root, {
-	Size = UDim2.fromOffset(30, 30),
-	Position = UDim2.new(1, -40, 0, 10),
+	Size             = UDim2.fromOffset(30, 30),
+	Position         = UDim2.new(1, -40, 0, 10),
 	BackgroundColor3 = COLORS.card,
-	Text = "X",
-	TextSize = 16,
+	Text             = "X",
+	TextSize         = 16,
 })
 stroke(closeBtn, COLORS.danger, 1)
 closeBtn.MouseButton1Click:Connect(function() screenGui:Destroy() end)
@@ -258,47 +242,47 @@ keyScreen.Parent             = root
 padding(keyScreen, 28, 28, 28, 28)
 
 label(keyScreen, {
-	Size = UDim2.new(1, 0, 0, 36),
-	Text = HUB_NAME,
-	TextSize = 26,
-	Font = Enum.Font.GothamBold,
+	Size           = UDim2.new(1, 0, 0, 36),
+	Text           = HUB_NAME,
+	TextSize       = 26,
+	Font           = Enum.Font.GothamBold,
 	TextXAlignment = Enum.TextXAlignment.Center,
 })
 
 label(keyScreen, {
-	Position = UDim2.fromOffset(0, 44),
-	Size     = UDim2.new(1, 0, 0, 40),
-	Text     = "กรอก Key ที่รับจากเว็บ",
-	TextSize = 14,
-	TextColor3 = COLORS.muted,
+	Position       = UDim2.fromOffset(0, 44),
+	Size           = UDim2.new(1, 0, 0, 40),
+	Text           = "กรอก Key ที่รับจากเว็บ",
+	TextSize       = 14,
+	TextColor3     = COLORS.muted,
 	TextXAlignment = Enum.TextXAlignment.Center,
-	TextWrapped = true,
+	TextWrapped    = true,
 })
 
 local keyBox = Instance.new("TextBox")
-keyBox.Position       = UDim2.fromOffset(0, 100)
-keyBox.Size           = UDim2.new(1, 0, 0, 46)
+keyBox.Position         = UDim2.fromOffset(0, 100)
+keyBox.Size             = UDim2.new(1, 0, 0, 46)
 keyBox.BackgroundColor3 = Color3.fromRGB(13, 20, 36)
-keyBox.TextColor3     = COLORS.accent2
+keyBox.TextColor3       = COLORS.accent2
 keyBox.PlaceholderText  = "HUB-XXXX-XXXX-XXXX"
 keyBox.PlaceholderColor3 = COLORS.muted
-keyBox.Font           = Enum.Font.Code
-keyBox.TextSize       = 15
+keyBox.Font             = Enum.Font.Code
+keyBox.TextSize         = 15
 keyBox.ClearTextOnFocus = false
-keyBox.Text           = ""
-keyBox.Parent         = keyScreen
+keyBox.Text             = ""
+keyBox.Parent           = keyScreen
 corner(keyBox, 10)
 stroke(keyBox, COLORS.border, 1)
 padding(keyBox, 0, 12, 0, 12)
 
 local statusLabel = label(keyScreen, {
-	Position = UDim2.fromOffset(0, 156),
-	Size     = UDim2.new(1, 0, 0, 36),
-	Text     = " ",
-	TextSize = 13,
-	TextColor3 = COLORS.muted,
+	Position       = UDim2.fromOffset(0, 156),
+	Size           = UDim2.new(1, 0, 0, 36),
+	Text           = " ",
+	TextSize       = 13,
+	TextColor3     = COLORS.muted,
 	TextXAlignment = Enum.TextXAlignment.Center,
-	TextWrapped = true,
+	TextWrapped    = true,
 })
 
 local verifyBtn = button(keyScreen, {
@@ -310,13 +294,13 @@ local verifyBtn = button(keyScreen, {
 })
 
 label(keyScreen, {
-	Position = UDim2.new(0, 0, 1, -48),
-	Size     = UDim2.new(1, 0, 0, 40),
-	Text     = "ยังไม่มี Key? เปิดเว็บรับ Key ก่อน → " .. KEY_PAGE_URL,
-	TextSize = 11,
-	TextColor3 = COLORS.muted,
+	Position       = UDim2.new(0, 0, 1, -48),
+	Size           = UDim2.new(1, 0, 0, 40),
+	Text           = "ยังไม่มี Key? เปิดเว็บรับ Key ก่อน → " .. KEY_PAGE_URL,
+	TextSize       = 11,
+	TextColor3     = COLORS.muted,
 	TextXAlignment = Enum.TextXAlignment.Center,
-	TextWrapped = true,
+	TextWrapped    = true,
 })
 
 -- ===== HUB SCREEN =====
@@ -330,28 +314,28 @@ hubScreen.Parent             = root
 padding(hubScreen, 24, 24, 24, 24)
 
 label(hubScreen, {
-	Size = UDim2.new(1, 0, 0, 30),
-	Text = HUB_NAME,
-	TextSize = 22,
-	Font = Enum.Font.GothamBold,
+	Size           = UDim2.new(1, 0, 0, 30),
+	Text           = HUB_NAME,
+	TextSize       = 22,
+	Font           = Enum.Font.GothamBold,
 	TextXAlignment = Enum.TextXAlignment.Center,
 })
 
 label(hubScreen, {
-	Position = UDim2.fromOffset(0, 34),
-	Size     = UDim2.new(1, 0, 0, 22),
-	Text     = "ยินดีต้อนรับ!",
-	TextSize = 13,
-	TextColor3 = COLORS.ok,
+	Position       = UDim2.fromOffset(0, 34),
+	Size           = UDim2.new(1, 0, 0, 22),
+	Text           = "ยินดีต้อนรับ!",
+	TextSize       = 13,
+	TextColor3     = COLORS.ok,
 	TextXAlignment = Enum.TextXAlignment.Center,
 })
 
 local expireLabel = label(hubScreen, {
-	Position = UDim2.fromOffset(0, 56),
-	Size     = UDim2.new(1, 0, 0, 18),
-	Text     = "",
-	TextSize = 11,
-	TextColor3 = COLORS.muted,
+	Position       = UDim2.fromOffset(0, 56),
+	Size           = UDim2.new(1, 0, 0, 18),
+	Text           = "",
+	TextSize       = 11,
+	TextColor3     = COLORS.muted,
 	TextXAlignment = Enum.TextXAlignment.Center,
 })
 
@@ -366,15 +350,15 @@ scriptList.AutomaticCanvasSize = Enum.AutomaticSize.Y
 scriptList.Parent              = hubScreen
 
 local listLayout = Instance.new("UIListLayout")
-listLayout.Padding    = UDim.new(0, 10)
-listLayout.SortOrder  = Enum.SortOrder.LayoutOrder
-listLayout.Parent     = scriptList
+listLayout.Padding   = UDim.new(0, 10)
+listLayout.SortOrder = Enum.SortOrder.LayoutOrder
+listLayout.Parent    = scriptList
 
 local logoutBtn = button(hubScreen, {
-	Position = UDim2.new(0, 0, 1, -38),
-	Size     = UDim2.new(1, 0, 0, 36),
-	Text     = "ออกจากระบบ",
-	TextSize = 14,
+	Position         = UDim2.new(0, 0, 1, -38),
+	Size             = UDim2.new(1, 0, 0, 36),
+	Text             = "ออกจากระบบ",
+	TextSize         = 14,
 	BackgroundColor3 = Color3.fromRGB(31, 41, 66),
 })
 
@@ -394,7 +378,6 @@ local function showHub(expiresAt)
 		expireLabel.Text = "Key หมดอายุ: " .. tostring(expiresAt):sub(1, 10)
 	end
 
-	-- สร้างการ์ดสคริปต์
 	for i, scriptInfo in ipairs(SCRIPTS) do
 		local card = Instance.new("Frame")
 		card.Size             = UDim2.new(1, -4, 0, 72)
@@ -407,40 +390,36 @@ local function showHub(expiresAt)
 		padding(card, 12, 12, 12, 12)
 
 		label(card, {
-			Size = UDim2.new(1, -90, 0, 22),
-			Text = scriptInfo.name,
+			Size     = UDim2.new(1, -90, 0, 22),
+			Text     = scriptInfo.name,
 			TextSize = 15,
-			Font = Enum.Font.GothamBold,
+			Font     = Enum.Font.GothamBold,
 		})
 		label(card, {
-			Position = UDim2.fromOffset(0, 24),
-			Size     = UDim2.new(1, -90, 0, 32),
-			Text     = scriptInfo.desc,
-			TextSize = 11,
-			TextColor3 = COLORS.muted,
+			Position    = UDim2.fromOffset(0, 24),
+			Size        = UDim2.new(1, -90, 0, 32),
+			Text        = scriptInfo.desc,
+			TextSize    = 11,
+			TextColor3  = COLORS.muted,
 			TextWrapped = true,
 		})
 
 		local loadBtn = button(card, {
-			Position = UDim2.new(1, -76, 0.5, -16),
-			Size     = UDim2.fromOffset(72, 32),
-			Text     = "โหลด",
-			TextSize = 13,
+			Position         = UDim2.new(1, -76, 0.5, -16),
+			Size             = UDim2.fromOffset(72, 32),
+			Text             = "โหลด",
+			TextSize         = 13,
 			BackgroundColor3 = COLORS.accent2,
 		})
 		loadBtn.TextColor3 = Color3.fromRGB(10, 20, 30)
 
 		loadBtn.MouseButton1Click:Connect(function()
 			loadBtn.Text = "..."
-
 			task.spawn(function()
 				local success, err = pcall(function()
 					if scriptInfo.url then
-						-- โหลด script จาก URL แล้วรัน
 						local src = httpGet(scriptInfo.url)
-						if not src or src == "" then
-							error("โหลดสคริปต์ไม่ได้ ตรวจ URL")
-						end
+						if not src or src == "" then error("โหลดสคริปต์ไม่ได้ ตรวจ URL") end
 						local fn, loadErr = loadstring(src)
 						if not fn then error(loadErr) end
 						fn()
@@ -448,7 +427,6 @@ local function showHub(expiresAt)
 						scriptInfo.run()
 					end
 				end)
-
 				loadBtn.Text = success and "✓" or "!"
 				if not success then
 					warn("[Hub] " .. scriptInfo.name .. ": " .. tostring(err))
@@ -460,7 +438,6 @@ local function showHub(expiresAt)
 	end
 end
 
--- Verify button
 verifyBtn.MouseButton1Click:Connect(function()
 	local key = string.match(keyBox.Text, "^%s*(.-)%s*$")
 	if key == "" then
@@ -476,7 +453,6 @@ verifyBtn.MouseButton1Click:Connect(function()
 		verifyBtn.Text = "ยืนยัน Key"
 
 		if ok then
-			-- ถ้า server ส่ง script_url มา ให้โหลดและรันเลย
 			if scriptUrl and scriptUrl ~= "" then
 				setStatus("โหลด script...", COLORS.muted)
 				local src = httpGet(scriptUrl)
@@ -511,8 +487,8 @@ logoutBtn.MouseButton1Click:Connect(function()
 	end
 	hubScreen.Visible = false
 	keyScreen.Visible = true
-	root.Size = UDim2.fromOffset(420, 500)
-	keyBox.Text = ""
+	root.Size         = UDim2.fromOffset(420, 500)
+	keyBox.Text       = ""
 	setStatus(" ", COLORS.muted)
 end)
 
