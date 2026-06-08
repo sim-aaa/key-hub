@@ -588,21 +588,6 @@ verifyBtn.MouseButton1Click:Connect(function()
 		verifyBtn.Text = "ยืนยัน Key"
 
 		if ok then
-			if scriptUrl and scriptUrl ~= "" then
-				setStatus("โหลด script...", COLORS.muted)
-				local src = httpGet(scriptUrl)
-				if src and src ~= "" then
-					local fn, loadErr = loadstring(src)
-					if fn then
-						task.spawn(fn)
-					else
-						warn("[Hub] loadstring error: " .. tostring(loadErr))
-					end
-				else
-					warn("[Hub] ดาวน์โหลด script ไม่ได้จาก: " .. tostring(scriptUrl))
-				end
-			end
-
 			setStatus("ยืนยัน Key สำเร็จ!", COLORS.ok)
 			task.wait(0.4)
 			showHub(expiresAt)
