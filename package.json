@@ -1,0 +1,17 @@
+{
+  "name": "key-hub",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Free-tier Roblox script hub key system (Supabase + Vercel)",
+  "scripts": {
+    "dev": "node scripts/local-server.js",
+    "deploy": "vercel --prod"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.1",
+    "dotenv": "^16.4.7"
+  },
+  "devDependencies": {
+    "vercel": "^41.1.0"
+  }
+}
