@@ -30,7 +30,7 @@ local function httpGet(url)
 end
 
 notify("Key Hub", "Loading main script...")
-local source = httpGet(MAIN_SCRIPT_URL)
+local source = httpGet(MAIN_SCRIPT_URL .. "?t=" .. tostring(math.random(1, 999999)))
 
 if not source then
 	notify("Error", "โหลด main.lua ไม่ได้ — ตรวจ MAIN_SCRIPT_URL")
