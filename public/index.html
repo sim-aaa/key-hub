@@ -352,9 +352,11 @@
         readyAtMs = Date.now() + Number(data.wait_seconds || 15) * 1000 + 1500;
         saveChallengeState();
 
+                // Generate a simple token for security
+        const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
         const returnUrl = `${window.location.origin}/claim.html?challenge_id=${encodeURIComponent(
           challengeId
-        )}&ready_at=${encodeURIComponent(new Date(readyAtMs).toISOString())}`;
+        )}&token=${token}&ready_at=${encodeURIComponent(new Date(readyAtMs).toISOString())}`;
         const adUrl = appendQueryParam(data.ad_url || "https://work.ink", "return_url", returnUrl);
 
         // สร้างลิงก์และคลิกอัตโนมัติแทน window.open()
