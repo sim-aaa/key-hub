@@ -1,3 +1,6 @@
+-- OBFUSCATED BUILD (placeholder)
+-- Run with LUA_OBFUSCATOR_CMD to use a real obfuscator.
+
 --[[
   Script Hub — Main UI
   รองรับ: Xeno, Delta, Synapse X, KRNL
