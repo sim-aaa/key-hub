@@ -10,7 +10,7 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const { gateWaitSeconds } = getConfig();
+    const { gateWaitSeconds, gateAdUrl } = getConfig();
     const supabase = getSupabase();
     const ipHash = hashIp(getClientIp(req));
 
@@ -31,9 +31,10 @@ module.exports = async (req, res) => {
       ok: true,
       challenge_id: data.id,
       wait_seconds: gateWaitSeconds,
+      ad_url: gateAdUrl,
       created_at: data.created_at,
       ready_at: new Date(readyAtMs).toISOString(),
-      message: `รอ ${gateWaitSeconds} วินาที ระบบจะสร้าง Key ให้อัตโนมัติ`,
+      message: `เปิด work.ink ดู ads ก่อน แล้วกลับมารับ Key`,
     });
   } catch (err) {
     return json(res, 500, { ok: false, message: err.message });

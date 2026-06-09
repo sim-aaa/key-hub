@@ -123,10 +123,10 @@
 <body>
   <main class="card">
     <h1>Script Hub Key</h1>
-    <p>กดปุ่มด้านล่างเพื่อเริ่มรับ Key ใช้งานได้ 24 ชั่วโมง ระบบจะสร้าง Key ให้อัตโนมัติเมื่อรอครบ</p>
+    <p>กดปุ่มด้านล่างเพื่อดู ads บน work.ink ก่อน จากนั้นจึงรับ Key ใช้งานได้ 24 ชั่วโมง.</p>
 
     <div class="actions">
-      <button id="startBtn" class="primary">เริ่มรับ Key</button>
+      <button id="startBtn" class="primary">เริ่มดู ads</button>
       <button id="copyBtn" class="secondary" disabled>คัดลอก Key</button>
     </div>
 
@@ -141,6 +141,7 @@
 
   <script>
     const API_BASE = window.location.origin;
+    const STORAGE_KEY = "key-hub-gate-challenge";
 
     const startBtn = document.getElementById("startBtn");
     const copyBtn = document.getElementById("copyBtn");
@@ -163,6 +164,77 @@
       if (waitTimer) {
         clearInterval(waitTimer);
         waitTimer = null;
+      }
+    }
+
+    function cleanUrl() {
+      if (window.history.replaceState) {
+        const clean = window.location.origin + window.location.pathname;
+        window.history.replaceState(null, "", clean);
+      }
+    }
+
+    function parseQueryParams() {
+      const params = new URLSearchParams(window.location.search);
+      return {
+        challengeId: params.get("challenge_id"),
+        readyAt: params.get("ready_at"),
+      };
+    }
+
+    function saveChallengeState() {
+      if (!challengeId) {
+        sessionStorage.removeItem(STORAGE_KEY);
+        return;
+      }
+      sessionStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({ challengeId, readyAtMs })
+      );
+    }
+
+    function restoreChallengeState() {
+      try {
+        const saved = JSON.parse(sessionStorage.getItem(STORAGE_KEY) || "null");
+        if (saved?.challengeId) {
+          challengeId = saved.challengeId;
+          readyAtMs = Number(saved.readyAtMs) || 0;
+        }
+      } catch (err) {
+        sessionStorage.removeItem(STORAGE_KEY);
+      }
+
+      if (!challengeId) {
+        const params = parseQueryParams();
+        if (params.challengeId) {
+          challengeId = params.challengeId;
+          readyAtMs = params.readyAt ? Date.parse(params.readyAt) : 0;
+          cleanUrl();
+        }
+      }
+
+      if (challengeId) {
+        saveChallengeState();
+        if (getSecondsLeft() > 0) {
+          setStatus(`กำลังรอ ${getSecondsLeft()} วินาที...`, "");
+          scheduleClaim();
+        } else {
+          setStatus("กลับมาจาก ads แล้ว พร้อมรับ Key", "");
+        }
+      } else {
+        setStatus("พร้อมเริ่ม", "");
+      }
+
+      updateStartButton();
+    }
+
+    function appendQueryParam(url, name, value) {
+      try {
+        const target = new URL(url);
+        target.searchParams.set(name, value);
+        return target.toString();
+      } catch {
+        return url;
       }
     }
 
@@ -205,11 +277,12 @@
         keyBox.classList.add("show");
         copyBtn.disabled = false;
         setStatus("ได้ Key แล้ว คัดลอกไปใส่ใน Script ได้เลย", "ok");
-        startBtn.disabled = false;
         challengeId = null;
+        saveChallengeState();
+        updateStartButton();
       } catch (err) {
         setStatus(err.message, "err");
-        startBtn.disabled = false;
+        updateStartButton();
       } finally {
         claiming = false;
       }
@@ -230,26 +303,73 @@
       }, 250);
     }
 
+    function updateStartButton() {
+      if (!challengeId) {
+        startBtn.textContent = "เริ่มดู ads";
+        startBtn.disabled = false;
+      } else if (getSecondsLeft() > 0) {
+        startBtn.textContent = "ผมดู ads เสร็จแล้ว รับ Key";
+        startBtn.disabled = false;
+      } else {
+        startBtn.textContent = "รับ Key ตอนนี้";
+        startBtn.disabled = false;
+      }
+    }
+
     startBtn.addEventListener("click", async () => {
+      if (challengeId) {
+        if (getSecondsLeft() > 0) {
+          setStatus("กรุณารอสักครู่จนกว่าจะครบเวลาที่กำหนดก่อนรับ Key...", "");
+          return;
+        }
+
+        setStatus("กำลังสร้าง Key...", "");
+        await claimKey();
+        return;
+      }
+
       startBtn.disabled = true;
       copyBtn.disabled = true;
       keyBox.classList.remove("show");
       clearWaitTimer();
       challengeId = null;
+      readyAtMs = 0;
       claiming = false;
+      saveChallengeState();
+
+      let adWindow;
+      try {
+        adWindow = window.open("about:blank", "_blank");
+      } catch (openErr) {
+        adWindow = null;
+      }
 
       try {
         const data = await postJson("gate-start");
         if (!data.ok) throw new Error(data.message || "เริ่ม gate ไม่สำเร็จ");
 
         challengeId = data.challenge_id;
-        const waitSeconds = Number(data.wait_seconds || 15);
-        readyAtMs = Date.now() + waitSeconds * 1000 + 1500;
+        readyAtMs = Date.now() + Number(data.wait_seconds || 15) * 1000 + 1500;
+        saveChallengeState();
 
-        const left = getSecondsLeft();
-        setStatus(left > 0 ? `กำลังรอ ${left} วินาที...` : "กำลังสร้าง Key...", "");
+        const returnUrl = `${window.location.origin}${window.location.pathname}?challenge_id=${encodeURIComponent(
+          challengeId
+        )}&ready_at=${encodeURIComponent(new Date(readyAtMs).toISOString())}`;
+        const adUrl = appendQueryParam(data.ad_url || "https://work.ink", "return_url", returnUrl);
+
+        if (adWindow) {
+          adWindow.location = adUrl;
+        } else {
+          window.open(adUrl, "_blank");
+        }
+
+        setStatus("เปิดหน้า work.ink แล้ว ดู ads แล้วกลับมาคลิกปุ่มนี้อีกครั้งเพื่อรับ Key", "");
+        updateStartButton();
         scheduleClaim();
       } catch (err) {
+        if (adWindow && !adWindow.closed) {
+          adWindow.close();
+        }
         setStatus(err.message, "err");
         startBtn.disabled = false;
       }
@@ -260,6 +380,8 @@
       await navigator.clipboard.writeText(keyValue.textContent);
       setStatus("คัดลอก Key แล้ว", "ok");
     });
+
+    restoreChallengeState();
   </script>
 </body>
 </html>

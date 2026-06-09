@@ -14,6 +14,7 @@ function getConfig() {
     scriptUrl: process.env.SCRIPT_URL || "",
     keyDurationHours: Number(process.env.KEY_DURATION_HOURS || 24),
     gateWaitSeconds: Number(process.env.GATE_WAIT_SECONDS || 15),
+    gateAdUrl: process.env.GATE_AD_URL || process.env.AD_URL || "https://work.ink",
   };
 }
 

@@ -16,6 +16,16 @@ key-hub/
   supabase/schema.sql  # SQL สร้างตาราง
 ```
 
+## รับ Key ด้วย Ads work.ink
+
+หน้าเว็บจะเก็บ `challenge_id` ไว้ใน session ก่อนเปิด `work.ink` หรือโฆษณาอื่น ๆ และให้ผู้ใช้กลับมาที่หน้ารับ Key เดิมเพื่อรับ key.
+
+- กดปุ่ม `เริ่มดู ads`
+- ระบบจะสร้าง gate challenge และเปิด `work.ink` ในแท็บใหม่
+- เมื่อกลับมาที่หน้าเดิม ให้คลิกปุ่มเดิมเพื่อรับ Key
+- หากยังไม่ถึงเวลาสร้าง key หน้าเว็บจะรอและสร้าง key ให้เองเมื่อครบ
+- ตั้ง `GATE_AD_URL` (หรือ `AD_URL`) ใน `.env` เพื่อใช้ URL ของ work.ink หรือโฆษณาภายนอกอื่น ๆ
+
 ## API
 
 | Endpoint | Method | หน้าที่ |
@@ -105,14 +115,14 @@ local API_URL = "https://your-project.vercel.app/api/verify"
 
 อัปโหลด `scripts/main.lua` ไป GitHub Gist / repo แล้วใส่ URL ใน `SCRIPT_URL`
 
-## เปลี่ยนจาก Gate จำลอง → Ad จริง
+## ปรับ flow เป็น Ad จริง
 
-ตอนนี้หน้าเว็บใช้ระบบรอ 15 วินาทีแทน ad (ฟรี ไม่ต้องมีทุน)
+ตอนนี้หน้าเว็บใช้ระบบสร้าง challenge และเก็บ `challenge_id` ก่อนเปิดโฆษณา แล้วให้ผู้ใช้กลับมาที่หน้ารับ Key เดิม
 
-เมื่อพร้อม ให้เปลี่ยน flow ใน `public/index.html`:
-- ปุ่ม "เริ่มรับ Key" → เปิดลิงก์ Work.ink / Linkvertise
-- หลังทำ ad ครบ redirect กลับมาพร้อม token
-- เรียก `/api/generate-key` โดยส่ง token แทน `challenge_id`
+- ปุ่ม "เริ่มดู ads" จะสร้าง `challenge_id` และเปิด URL โฆษณา
+- หน้าเว็บจะบันทึกสถานะใน session ก่อนเปิดโฆษณา
+- เมื่อกลับมาที่หน้าเดิม ให้กดปุ่มเดิมเพื่อรับ Key
+- `/api/generate-key` จะถูกเรียกด้วย `challenge_id` เดิมเมื่อพร้อม
 
 ## จัดการ Key
 
