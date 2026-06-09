@@ -8,6 +8,7 @@ const {
   hashIp,
   getClientIp,
 } = require("./lib/http");
+const url = require('url');
 
 async function createKey(supabase, durationHours) {
   const expiresAt = new Date(Date.now() + durationHours * 60 * 60 * 1000).toISOString();
@@ -103,7 +104,13 @@ module.exports = async (req, res) => {
     if (isAdmin) {
       keyData = await createKey(supabase, config.keyDurationHours);
     } else {
-      const challengeId = body.challenge_id;
+      // Check if challenge_id is provided in body or query
+      let challengeId = body.challenge_id;
+      if (!challengeId && req.url) {
+        const query = url.parse(req.url, true).query;
+        challengeId = query.challenge_id;
+      }
+
       if (!challengeId) {
         return json(res, 400, { ok: false, message: "challenge_id is required" });
       }
@@ -137,3 +144,4 @@ module.exports = async (req, res) => {
     return json(res, 500, { ok: false, message: err.message });
   }
 };
+
