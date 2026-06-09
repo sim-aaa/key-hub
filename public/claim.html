@@ -46,7 +46,7 @@
 <body>
   <div class="container">
     <h1>Claim Your Roblox Script Key</h1>
-    <div id="status">Please wait while we prepare your key...</div>
+    <div id="status">Preparing your key...</div>
     <button id="claimBtn" style="display: none;">Claim Key</button>
     <div id="result" style="margin-top: 20px;"></div>
   </div>
@@ -54,24 +54,41 @@
   <script>
     // Extract challenge_id from URL parameters
     const urlParams = new URLSearchParams(window.location.search);
-    const challengeId = urlParams.get('challenge_id');
+    let challengeId = urlParams.get('challenge_id');
 
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', async function() {
       const statusElement = document.getElementById('status');
       const claimBtn = document.getElementById('claimBtn');
       const resultElement = document.getElementById('result');
 
+      // If no challenge_id, create a new one
       if (!challengeId) {
-        statusElement.textContent = 'Error: No challenge_id provided';
-        statusElement.className = 'error';
-        return;
-      }
+        try {
+          const response = await fetch('/api/gate-start', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+          });
+          const data = await response.json();
 
-      // Show the claim button after a short delay
-      setTimeout(() => {
+          if (data.ok) {
+            challengeId = data.challenge_id;
+            statusElement.textContent = 'Click the button below to claim your key';
+            claimBtn.style.display = 'block';
+          } else {
+            statusElement.textContent = 'Error: ' + data.message;
+            statusElement.className = 'error';
+            return;
+          }
+        } catch (error) {
+          statusElement.textContent = 'Error: ' + error.message;
+          statusElement.className = 'error';
+          return;
+        }
+      } else {
+        // If challenge_id exists, show claim button immediately
         statusElement.textContent = 'Click the button below to claim your key';
         claimBtn.style.display = 'block';
-      }, 2000);
+      }
 
       claimBtn.addEventListener('click', async () => {
         claimBtn.disabled = true;
