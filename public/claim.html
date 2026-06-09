@@ -57,10 +57,11 @@
     let challengeId = urlParams.get('challenge_id');
     const token = urlParams.get('token');
 
-    // Simple token validation (in production, use server-side validation)
+    // Token validation
     function isValidToken(t) {
-      // This is a simple check - in production, you should validate this server-side
-      return t && t.length > 0;
+      // Check if token exists and matches with sessionStorage
+      const storedToken = sessionStorage.getItem('claimToken');
+      return t && t.length > 0 && t === storedToken;
     }
 
     document.addEventListener('DOMContentLoaded', async function() {
