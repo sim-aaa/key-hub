@@ -67,14 +67,27 @@
       const claimBtn = document.getElementById('claimBtn');
       const resultElement = document.getElementById('result');
 
+      // Check if user came from the main page (via sessionStorage)
+      const cameFromMainPage = sessionStorage.getItem('cameFromMainPage');
+      
+      if (!cameFromMainPage) {
+        statusElement.textContent = 'Please access this page through the official link. Click the button below to go back.';
+        statusElement.className = 'error';
+        
+        // Show a button to go back to main page
+        const backBtn = document.createElement('button');
+        backBtn.textContent = 'Go to Main Page';
+        backBtn.style.marginTop = '20px';
+        backBtn.addEventListener('click', () => {
+          window.location.href = window.location.origin;
+        });
+        document.getElementById('result').appendChild(backBtn);
+        
+        return;
+      }
 
-
-
-
-
-
-      // Always create a new challenge when user comes to this page
-      // No need to check token for this simple version
+      // Clear the flag so it can't be reused
+      sessionStorage.removeItem('cameFromMainPage');
 
       // If no challenge_id, create a new one
       if (!challengeId) {
