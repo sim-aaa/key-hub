@@ -57,11 +57,9 @@
     let challengeId = urlParams.get('challenge_id');
     const token = urlParams.get('token');
 
-    // Token validation
+    // Simple validation - just check if token exists
     function isValidToken(t) {
-      // Check if token exists and matches with sessionStorage
-      const storedToken = sessionStorage.getItem('claimToken');
-      return t && t.length > 0 && t === storedToken;
+      return t && t.length > 0;
     }
 
     document.addEventListener('DOMContentLoaded', async function() {
@@ -69,12 +67,14 @@
       const claimBtn = document.getElementById('claimBtn');
       const resultElement = document.getElementById('result');
 
-      // Check if token is valid
-      if (!isValidToken(token)) {
-        statusElement.textContent = 'Invalid access. Please enter through the official link.';
-        statusElement.className = 'error';
-        return;
-      }
+
+
+
+
+
+
+      // Always create a new challenge when user comes to this page
+      // No need to check token for this simple version
 
       // If no challenge_id, create a new one
       if (!challengeId) {
