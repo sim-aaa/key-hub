@@ -121,21 +121,12 @@
   </style>
 </head>
 <body>
-  <main class="card">
-    <h1>Script Hub Key</h1>
+    <main class="card">
+    <h1>ยินดีต้อนรับ</h1>
     <p>กดปุ่มด้านล่างเพื่อดู ads บน work.ink ก่อน จากนั้นจึงรับ Key ใช้งานได้ 24 ชั่วโมง.</p>
 
     <div class="actions">
       <button id="startBtn" class="primary">เริ่มดู ads</button>
-      <button id="copyBtn" class="secondary" disabled>คัดลอก Key</button>
-    </div>
-
-    <div id="status" class="status">พร้อมเริ่ม</div>
-
-    <div id="keyBox" class="key-box">
-      <div class="small">Key ของคุณ</div>
-      <div id="keyValue" class="key-value"></div>
-      <div id="expireText" class="small"></div>
     </div>
   </main>
 
@@ -303,99 +294,10 @@
       }, 250);
     }
 
-    function updateStartButton() {
-      if (!challengeId) {
-        startBtn.textContent = "เริ่มดู ads";
-        startBtn.disabled = false;
-      } else if (getSecondsLeft() > 0) {
-        startBtn.textContent = "ผมดู ads เสร็จแล้ว รับ Key";
-        startBtn.disabled = false;
-      } else {
-        startBtn.textContent = "รับ Key ตอนนี้";
-        startBtn.disabled = false;
-      }
-    }
-
-    startBtn.addEventListener("click", async () => {
-      if (challengeId) {
-        if (getSecondsLeft() > 0) {
-          setStatus("กรุณารอสักครู่จนกว่าจะครบเวลาที่กำหนดก่อนรับ Key...", "");
-          return;
-        }
-
-        setStatus("กำลังสร้าง Key...", "");
-        await claimKey();
-        return;
-      }
-
-      startBtn.disabled = true;
-      copyBtn.disabled = true;
-      keyBox.classList.remove("show");
-      clearWaitTimer();
-      challengeId = null;
-      readyAtMs = 0;
-      claiming = false;
-      saveChallengeState();
-
-      let adWindow;
-      try {
-        adWindow = window.open("about:blank", "_blank");
-      } catch (openErr) {
-        adWindow = null;
-      }
-
-                        try {
-        const data = await postJson("gate-start");
-        if (!data.ok) throw new Error(data.message || "เริ่ม gate ไม่สำเร็จ");
-
-        challengeId = data.challenge_id;
-        readyAtMs = Date.now() + Number(data.wait_seconds || 15) * 1000 + 1500;
-        saveChallengeState();
-
-                                // Generate a random token and store it in sessionStorage
-                const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-                sessionStorage.setItem('expectedToken', token);
-                // Store the current time to check if user actually waited
-                sessionStorage.setItem('adStartTime', Date.now().toString());
-        const returnUrl = `${window.location.origin}/claim.html?challenge_id=${encodeURIComponent(
-          challengeId
-        )}&token=${token}&ready_at=${encodeURIComponent(new Date(readyAtMs).toISOString())}`;
-        
-        // Try to create Work.ink link dynamically (if API key is available)
-        let workInkUrl = data.ad_url || "https://work.ink";
-        
-        // If you have Work.ink API key, you can create a unique link for each user
-        // This is just a placeholder - you need to implement the actual API call
-        // const workInkApiKey = "YOUR_WORKINK_API_KEY";
-        // workInkUrl = await createWorkInkLink(workInkApiKey, returnUrl);
-        
-        const adUrl = appendQueryParam(workInkUrl, "return_url", returnUrl);
-
-        // สร้างลิงก์และคลิกอัตโนมัติแทน window.open()
-        const link = document.createElement('a');
-        link.href = adUrl;
-        link.target = '_blank';
-        link.rel = 'noopener noreferrer';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-
-        setStatus("เปิดหน้า work.ink แล้ว ดู ads แล้วกลับมาคลิกปุ่มนี้อีกครั้งเพื่อรับ Key", "");
-        updateStartButton();
-        scheduleClaim();
-      } catch (err) {
-        setStatus(err.message, "err");
-        startBtn.disabled = false;
-      }
+        startBtn.addEventListener("click", () => {
+      // Redirect to Work.ink directly
+      window.location.href = 'https://work.ink/2DHs/key-hub';
     });
-
-    copyBtn.addEventListener("click", async () => {
-      if (!keyValue.textContent) return;
-      await navigator.clipboard.writeText(keyValue.textContent);
-      setStatus("คัดลอก Key แล้ว", "ok");
-    });
-
-    restoreChallengeState();
   </script>
 </body>
 </html>
