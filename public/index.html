@@ -352,12 +352,9 @@
         readyAtMs = Date.now() + Number(data.wait_seconds || 15) * 1000 + 1500;
         saveChallengeState();
 
-                // Generate a simple token for security
+                                // Generate a random token and store it in sessionStorage
                 const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-                // Store token in sessionStorage for later verification
-                sessionStorage.setItem('claimToken', token);
-                // Also store a flag that user came from the main page
-                sessionStorage.setItem('cameFromMainPage', 'true');
+                sessionStorage.setItem('expectedToken', token);
                 // Store the current time to check if user actually waited
                 sessionStorage.setItem('adStartTime', Date.now().toString());
         const returnUrl = `${window.location.origin}/claim.html?challenge_id=${encodeURIComponent(
