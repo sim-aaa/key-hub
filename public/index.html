@@ -352,10 +352,12 @@
         readyAtMs = Date.now() + Number(data.wait_seconds || 15) * 1000 + 1500;
         saveChallengeState();
 
-        // Generate a simple token for security
+                // Generate a simple token for security
         const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
         // Store token in sessionStorage for later verification
         sessionStorage.setItem('claimToken', token);
+        // Also store a flag that user came from the main page
+        sessionStorage.setItem('cameFromMainPage', 'true');
         const returnUrl = `${window.location.origin}/claim.html?challenge_id=${encodeURIComponent(
           challengeId
         )}&token=${token}&ready_at=${encodeURIComponent(new Date(readyAtMs).toISOString())}`;
