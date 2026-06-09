@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Claim Your Key</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin-top: 50px;
+      background-color: #f5f5f5;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: white;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    #status {
+      margin-top: 20px;
+      font-size: 18px;
+    }
+    .success {
+      color: green;
+    }
+    .error {
+      color: red;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Claim Your Roblox Script Key</h1>
+    <div id="status">Please wait while we prepare your key...</div>
+    <button id="claimBtn" style="display: none;">Claim Key</button>
+    <div id="result" style="margin-top: 20px;"></div>
+  </div>
+
+  <script>
+    // Extract challenge_id from URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const challengeId = urlParams.get('challenge_id');
+
+    document.addEventListener('DOMContentLoaded', function() {
+      const statusElement = document.getElementById('status');
+      const claimBtn = document.getElementById('claimBtn');
+      const resultElement = document.getElementById('result');
+
+      if (!challengeId) {
+        statusElement.textContent = 'Error: No challenge_id provided';
+        statusElement.className = 'error';
+        return;
+      }
+
+      // Show the claim button after a short delay
+      setTimeout(() => {
+        statusElement.textContent = 'Click the button below to claim your key';
+        claimBtn.style.display = 'block';
+      }, 2000);
+
+      claimBtn.addEventListener('click', async () => {
+        claimBtn.disabled = true;
+        claimBtn.textContent = 'Claiming...';
+
+        try {
+          const response = await fetch('/api/generate-key', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ challenge_id: challengeId })
+          });
+
+          const data = await response.json();
+
+          if (data.ok) {
+            resultElement.innerHTML = `
+              <h3>Your Key:</h3>
+              <p style="font-size: 20px; font-weight: bold; color: green;">${data.key}</p>
+              <p>Expires at: ${data.expires_at}</p>
+              <p>Copy this key and use it in your Roblox script</p>
+            `;
+            statusElement.textContent = 'Key claimed successfully!';
+            statusElement.className = 'success';
+          } else {
+            statusElement.textContent = 'Error: ' + data.message;
+            statusElement.className = 'error';
+          }
+        } catch (error) {
+          statusElement.textContent = 'Error: ' + error.message;
+          statusElement.className = 'error';
+        } finally {
+          claimBtn.style.display = 'none';
+        }
+      });
+    });
+  </script>
+</body>
+</html>
