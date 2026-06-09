@@ -115,6 +115,15 @@
           } else {
             statusElement.textContent = 'Error: ' + data.message;
             statusElement.className = 'error';
+            
+            // Show retry button if needed
+            if (data.retry_after_seconds && data.retry_after_seconds > 0) {
+              setTimeout(() => {
+                claimBtn.style.display = 'block';
+                claimBtn.textContent = 'Try Again';
+                claimBtn.disabled = false;
+              }, data.retry_after_seconds * 1000);
+            }
           }
         } catch (error) {
           statusElement.textContent = 'Error: ' + error.message;
