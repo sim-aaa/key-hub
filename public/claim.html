@@ -243,6 +243,9 @@
       // If no challenge_id, create a new one
       if (!challengeId) {
         try {
+          statusElement.textContent = 'กำลังสร้าง challenge...';
+          statusElement.className = '';
+          
           const response = await fetch('/api/gate-start', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' }
@@ -255,13 +258,25 @@
             statusElement.className = 'success';
             claimBtn.style.display = 'block';
           } else {
-            statusElement.textContent = 'เกิดข้อผิดพลาด: ' + data.message;
+            statusElement.textContent = 'เกิดข้อผิดพลาดในการสร้าง challenge: ' + data.message;
             statusElement.className = 'error';
+            
+            // Add retry button
+            setTimeout(() => {
+              location.reload();
+            }, 2000);
+            
             return;
           }
         } catch (error) {
-          statusElement.textContent = 'เกิดข้อผิดพลาด: ' + error.message;
+          statusElement.textContent = 'เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + error.message;
           statusElement.className = 'error';
+          
+          // Add retry button
+          setTimeout(() => {
+            location.reload();
+          }, 2000);
+          
           return;
         }
       } else {
