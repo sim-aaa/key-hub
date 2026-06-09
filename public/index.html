@@ -344,7 +344,7 @@
         adWindow = null;
       }
 
-            try {
+                        try {
         const data = await postJson("gate-start");
         if (!data.ok) throw new Error(data.message || "เริ่ม gate ไม่สำเร็จ");
 
@@ -352,14 +352,23 @@
         readyAtMs = Date.now() + Number(data.wait_seconds || 15) * 1000 + 1500;
         saveChallengeState();
 
-                                // Generate a simple token for security
+        // Generate a simple token for security
         const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
         // Store token in sessionStorage for later verification
         sessionStorage.setItem('claimToken', token);
         const returnUrl = `${window.location.origin}/claim.html?challenge_id=${encodeURIComponent(
           challengeId
         )}&token=${token}&ready_at=${encodeURIComponent(new Date(readyAtMs).toISOString())}`;
-        const adUrl = appendQueryParam(data.ad_url || "https://work.ink", "return_url", returnUrl);
+        
+        // Try to create Work.ink link dynamically (if API key is available)
+        let workInkUrl = data.ad_url || "https://work.ink";
+        
+        // If you have Work.ink API key, you can create a unique link for each user
+        // This is just a placeholder - you need to implement the actual API call
+        // const workInkApiKey = "YOUR_WORKINK_API_KEY";
+        // workInkUrl = await createWorkInkLink(workInkApiKey, returnUrl);
+        
+        const adUrl = appendQueryParam(workInkUrl, "return_url", returnUrl);
 
         // สร้างลิงก์และคลิกอัตโนมัติแทน window.open()
         const link = document.createElement('a');
