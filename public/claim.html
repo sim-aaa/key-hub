@@ -52,14 +52,28 @@
   </div>
 
   <script>
-    // Extract challenge_id from URL parameters
+    // Extract challenge_id and token from URL parameters
     const urlParams = new URLSearchParams(window.location.search);
     let challengeId = urlParams.get('challenge_id');
+    const token = urlParams.get('token');
+
+    // Simple token validation (in production, use server-side validation)
+    function isValidToken(t) {
+      // This is a simple check - in production, you should validate this server-side
+      return t && t.length > 0;
+    }
 
     document.addEventListener('DOMContentLoaded', async function() {
       const statusElement = document.getElementById('status');
       const claimBtn = document.getElementById('claimBtn');
       const resultElement = document.getElementById('result');
+
+      // Check if token is valid
+      if (!isValidToken(token)) {
+        statusElement.textContent = 'Invalid access. Please enter through the official link.';
+        statusElement.className = 'error';
+        return;
+      }
 
       // If no challenge_id, create a new one
       if (!challengeId) {
