@@ -67,10 +67,11 @@
       const claimBtn = document.getElementById('claimBtn');
       const resultElement = document.getElementById('result');
 
-      // Check if user came from Work.ink (via URL parameter)
-      const fromWorkInk = urlParams.get('from');
+      // Check if user came from Work.ink by checking document.referrer
+      const referrer = document.referrer;
+      const isFromWorkInk = referrer.includes('work.ink');
       
-      if (fromWorkInk !== 'workink') {
+      if (!isFromWorkInk) {
         statusElement.textContent = 'Please access this page through the official Work.ink link.';
         statusElement.className = 'error';
         
