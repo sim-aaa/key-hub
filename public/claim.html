@@ -307,8 +307,13 @@
             statusElement.textContent = 'เกิดข้อผิดพลาด: ' + data.message;
             statusElement.className = 'error';
             
-            // Show retry button if needed
-            if (data.retry_after_seconds && data.retry_after_seconds > 0) {
+            // Show more detailed error message
+            if (data.message.includes('IP')) {
+              statusElement.textContent = 'เกิดข้อผิดพลาด: IP ของคุณไม่ตรงกับที่ใช้ในการสร้าง challenge';
+            } else if (data.message.includes('wait')) {
+              statusElement.textContent = 'เกิดข้อผิดพลาด: กรุณารอสักครู่ก่อนรับ Key';
+            } else if (data.retry_after_seconds && data.retry_after_seconds > 0) {
+              statusElement.textContent = `เกิดข้อผิดพลาด: กรุณารออีก ${data.retry_after_seconds} วินาที`;
               setTimeout(() => {
                 claimBtn.style.display = 'block';
                 claimBtn.textContent = 'ลองอีกครั้ง';
@@ -317,7 +322,7 @@
             }
           }
         } catch (error) {
-          statusElement.textContent = 'เกิดข้อผิดพลาด: ' + error.message;
+          statusElement.textContent = 'เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + error.message;
           statusElement.className = 'error';
         } finally {
           claimBtn.style.display = 'none';
