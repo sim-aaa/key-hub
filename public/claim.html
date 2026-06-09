@@ -86,8 +86,30 @@
         return;
       }
 
+      // Check if user actually waited for the ad
+      const adStartTime = sessionStorage.getItem('adStartTime');
+      const currentTime = Date.now();
+      const minWaitTime = 15 * 1000; // 15 seconds
+      
+      if (adStartTime && (currentTime - parseInt(adStartTime)) < minWaitTime) {
+        statusElement.textContent = 'Please wait at least 15 seconds after clicking the ad link.';
+        statusElement.className = 'error';
+        
+        // Show a button to go back to main page
+        const backBtn = document.createElement('button');
+        backBtn.textContent = 'Go to Main Page';
+        backBtn.style.marginTop = '20px';
+        backBtn.addEventListener('click', () => {
+          window.location.href = window.location.origin;
+        });
+        document.getElementById('result').appendChild(backBtn);
+        
+        return;
+      }
+
       // Clear the flag so it can't be reused
       sessionStorage.removeItem('cameFromMainPage');
+      sessionStorage.removeItem('adStartTime');
 
       // If no challenge_id, create a new one
       if (!challengeId) {
