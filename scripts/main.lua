@@ -757,11 +757,11 @@ end
 verifyBtn.MouseButton1Click:Connect(function()
 	local key = string.match(keyBox.Text, "^%s*(.-)%s*$")
 	if key == "" then
-		-- Try to load saved key from HttpService
+		-- Try to load saved key from file
 		local savedKeyData = nil
-		if game:GetService("HttpService") then
+		if isfile and readfile then
 			local success, data = pcall(function()
-				return game:GetService("HttpService"):JSONDecode(game:GetService("HttpService"):GetAsync("savedKeyData") || "")
+				return game:GetService("HttpService"):JSONDecode(readfile("keyhub_key.json") || "")
 			end)
 			if success and data then
 				savedKeyData = data
@@ -796,13 +796,13 @@ verifyBtn.MouseButton1Click:Connect(function()
 		verifyBtn.Text = "ยืนยัน Key"
 
 		if ok then
-			-- Save key to HttpService
+			-- Save key to file
 			local keyData = {
 				key = key,
 				expiresAt = expiresAt
 			}
-			if game:GetService("HttpService") then
-				game:GetService("HttpService"):SetAsync("savedKeyData", game:GetService("HttpService"):JSONEncode(keyData))
+			if isfile and writefile then
+				writefile("keyhub_key.json", game:GetService("HttpService"):JSONEncode(keyData))
 			end
 			
 			setStatus("ยืนยัน Key สำเร็จ! Key ถูกเก็บไว้ในเครื่องของคุณ", COLORS.ok)
