@@ -757,8 +757,35 @@ end
 verifyBtn.MouseButton1Click:Connect(function()
 	local key = string.match(keyBox.Text, "^%s*(.-)%s*$")
 	if key == "" then
-		setStatus("กรุณากรอก Key", COLORS.danger)
-		return
+		-- Try to load saved key from localStorage
+		local savedKeyData = nil
+		if game:GetService("HttpService") then
+			local success, data = pcall(function()
+				return game:GetService("HttpService"):JSONDecode(localStorage.getItem("savedKeyData") || "")
+			end)
+			if success and data then
+				savedKeyData = data
+			end
+		end
+		
+		if savedKeyData then
+			-- Check if the key is still valid
+			local now = os.time()
+			local expiresAt = os.time(savedKeyData.expiresAt)
+			
+			if now < expiresAt then
+				keyBox.Text = savedKeyData.key
+				key = savedKeyData.key
+				setStatus("โหลด Key ที่เก็บไว้แล้ว", COLORS.ok)
+				task.wait(0.5)
+			else
+				setStatus("Key ที่เก็บไว้หมดอายุแล้ว กรุณากรอก Key ใหม่", COLORS.danger)
+				return
+			end
+		else
+			setStatus("กรุณากรอก Key", COLORS.danger)
+			return
+		end
 	end
 
 	verifyBtn.Text = "กำลังตรวจสอบ..."
@@ -769,7 +796,16 @@ verifyBtn.MouseButton1Click:Connect(function()
 		verifyBtn.Text = "ยืนยัน Key"
 
 		if ok then
-			setStatus("ยืนยัน Key สำเร็จ!", COLORS.ok)
+			-- Save key to localStorage
+			local keyData = {
+				key = key,
+				expiresAt = expiresAt
+			}
+			if game:GetService("HttpService") then
+				localStorage.setItem("savedKeyData", game:GetService("HttpService"):JSONEncode(keyData))
+			end
+			
+			setStatus("ยืนยัน Key สำเร็จ! Key ถูกเก็บไว้ในเครื่องของคุณ", COLORS.ok)
 			task.wait(0.4)
 			showHub(expiresAt)
 		else
