@@ -240,6 +240,43 @@
         return;
       }
 
+      // Check if there's a saved key in localStorage
+      const savedKeyData = localStorage.getItem('savedKeyData');
+      if (savedKeyData) {
+        try {
+          const keyData = JSON.parse(savedKeyData);
+          const now = new Date();
+          const expiresAt = new Date(keyData.expiresAt);
+          
+          // Check if the key is still valid
+          if (now < expiresAt) {
+            // Key is still valid, show it
+            keyDisplay.textContent = keyData.key;
+            expireText.textContent = `Key นี้จะหมดอายุ: ${expiresAt.toLocaleString('th-TH')}`;
+            
+            // Add pulse animation
+            keyDisplay.classList.add('pulse');
+            
+            resultElement.style.display = 'block';
+            statusElement.textContent = 'คุณมี Key ที่ยังใช้งานได้อยู่! คัดลอก Key นี้ไปใช้งานได้เลย';
+            statusElement.className = 'success';
+            
+            // Copy button functionality
+            copyBtn.addEventListener('click', async () => {
+              await navigator.clipboard.writeText(keyData.key);
+              copyBtn.textContent = 'คัดลอกแล้ว! ✓';
+              setTimeout(() => {
+                copyBtn.textContent = 'คัดลอก Key';
+              }, 2000);
+            });
+            
+            return;
+          }
+        } catch (e) {
+          console.error('Error parsing saved key:', e);
+        }
+      }
+
       // If no challenge_id, create a new one
       if (!challengeId) {
         try {
@@ -309,6 +346,13 @@
             resultElement.style.display = 'block';
             statusElement.textContent = 'รับ Key สำเร็จ! คัดลอก Key นี้ไปใช้งานได้เลย';
             statusElement.className = 'success';
+            
+            // Save key to localStorage
+            const keyData = {
+              key: data.key,
+              expiresAt: data.expires_at
+            };
+            localStorage.setItem('savedKeyData', JSON.stringify(keyData));
             
             // Copy button functionality
             copyBtn.addEventListener('click', async () => {
