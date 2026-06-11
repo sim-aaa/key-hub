@@ -40,7 +40,152 @@ _G.MonsterBringEnabled = false
 local currentSession = {}
 _G.MonsterBringSession = currentSession
 
+--[[
+  Script Hub — Main UI
+  รองรับ: Xeno, Delta, Synapse X, KRNL
+]]
+
+-- ============ CONFIG ============
+local API_VERIFY_URL = "https://key-hub-three.vercel.app/api/verify"
+local KEY_PAGE_URL   = "https://key-hub-three.vercel.app"
+local HUB_NAME       = "Script Hub"
+
+local SCRIPTS = {
+	{
+		name = "Monster Bring",
+		desc = "ดึงมอนสเตอร์มาหาตัวละครของคุณ รองรับ Anti-Kick",
+		isToggle = true,
+		enabled = false,
+		config = {
+			distance = 5,  -- ระยะห่างจากตัวละคร (stud)
+			height = -6,   -- ความสูงจากพื้น (stud)
+			spread = 10,   -- การกระจายตัวของมอนสเตอร์ (stud)
+		},
+		onToggle = function(self, state)
+			_G.MonsterBringEnabled = state
+			return state
+		end
+	},
+}
+-- ================================
+
+local Players          = game:GetService("Players")
+local HttpService      = game:GetService("HttpService")
+local TweenService     = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local RunService       = game:GetService("RunService")
+
+local player    = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- Clean up previous execution to prevent resource leaks/duplicate loops
+if _G.MonsterBringHeartbeat then
+	_G.MonsterBringHeartbeat:Disconnect()
+	_G.MonsterBringHeartbeat = nil
+end
+_G.MonsterBringEnabled = false
+local currentSession = {}
+_G.MonsterBringSession = currentSession
+
 -- ---------- Monster Bring Logic ----------
+local monsterCache = {}
+local MAX_TARGETS = 12
+
+local function updateMonsterCache()
+	if not _G.MonsterBringEnabled then return end
+	table.clear(monsterCache)
+	local counter = 0
+	for _, obj in ipairs(workspace:GetDescendants()) do
+		if counter >= MAX_TARGETS then break end
+		if obj:IsA("Model") and obj ~= player.Character and obj:FindFirstChild("Humanoid") then
+			if not Players:GetPlayerFromCharacter(obj) then
+				local hum = obj:FindFirstChildOfClass("Humanoid")
+				local rootPart = obj:FindFirstChild("HumanoidRootPart") or obj:FindFirstChild("Torso")
+				if hum and rootPart and hum.Health > 0 then
+					table.insert(monsterCache, {part = rootPart, hum = hum})
+					counter = counter + 1
+				end
+			end
+		end
+	end
+end
+
+-- AntiGravity lock loop
+_G.MonsterBringHeartbeat = RunService.Heartbeat:Connect(function()
+	if _G.MonsterBringEnabled then
+		local myChar = player.Character
+		local myRoot = myChar and (myChar:FindFirstChild("HumanoidRootPart") or myChar:FindFirstChild("Torso"))
+		if myRoot then
+			if not myRoot:FindFirstChild("AntiGravity") then
+				local bv = Instance.new("BodyVelocity")
+				bv.Name = "AntiGravity"
+				bv.Velocity = Vector3.new(0, 0, 0)
+				bv.MaxForce = Vector3.new(0, math.huge, 0)
+				bv.Parent = myRoot
+			end
+		end
+	else
+		local myChar = player.Character
+		local myRoot = myChar and (myChar:FindFirstChild("HumanoidRootPart") or myChar:FindFirstChild("Torso"))
+		if myRoot and myRoot:FindFirstChild("AntiGravity") then
+			myRoot.AntiGravity:Destroy()
+		end
+	end
+end)
+
+-- Cache update thread (exits if session changes)
+task.spawn(function()
+	while _G.MonsterBringSession == currentSession do
+		task.wait(2.0)
+		if _G.MonsterBringEnabled then
+			updateMonsterCache()
+		end
+	end
+end)
+
+-- Monster warp thread (exits if session changes)
+task.spawn(function()
+	while _G.MonsterBringSession == currentSession do
+		task.wait(0.15)
+		if _G.MonsterBringEnabled then
+			local myChar = player.Character
+			local myRoot = myChar and (myChar:FindFirstChild("HumanoidRootPart") or myChar:FindFirstChild("Torso"))
+			if myRoot then
+				local scriptInfo = SCRIPTS[1]
+				local config = scriptInfo.config
+				local basePosition = myRoot.CFrame * CFrame.new(0, config.height, -config.distance)
+				for i = #monsterCache, 1, -1 do
+					local monster = monsterCache[i]
+					local part = monster.part
+					local hum = monster.hum
+					if part and part.Parent and hum and hum.Health > 0 then
+						local randomOffset = Vector3.new(
+							math.random(-config.spread, config.spread)/10,
+							0,
+							math.random(-config.spread, config.spread)/10
+						)
+						part.CFrame = CFrame.lookAt(basePosition.Position + randomOffset, basePosition.Position + myRoot.CFrame.LookVector)
+						part.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+						part.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+						if hum.WalkSpeed ~= 0 then
+							hum.WalkSpeed = 0
+						end
+					else
+						table.remove(monsterCache, i)
+					end
+				end
+			end
+		end
+	end
+end)
+
+-- ===== UI Helpers ===== (same as before)
+
+-- ===== Build GUI ===== (same as before)
+
+-- ===== Logic ===== (same as before)
+
+print("[" .. HUB_NAME .. "] UI loaded — กรอก Key เพื่อเข้าใช้งาน")
 local monsterCache = {}
 local MAX_TARGETS = 12
 
