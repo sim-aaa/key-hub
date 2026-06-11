@@ -58,7 +58,7 @@ local SCRIPTS = {
 		enabled = false,
 		config = {
 			distance = 5,  -- ระยะห่างจากตัวละคร (stud)
-			height = 0,   -- ความสูงจากพื้น (stud)
+			height = -6,   -- ความสูงจากพื้น (stud)
 			spread = 10,   -- การกระจายตัวของมอนสเตอร์ (stud)
 		},
 		onToggle = function(self, state)
@@ -757,35 +757,8 @@ end
 verifyBtn.MouseButton1Click:Connect(function()
 	local key = string.match(keyBox.Text, "^%s*(.-)%s*$")
 	if key == "" then
-		-- Try to load saved key from file
-		local savedKeyData = nil
-		if isfile and readfile then
-			local success, data = pcall(function()
-				return game:GetService("HttpService"):JSONDecode(readfile("keyhub_key.json") || "")
-			end)
-			if success and data then
-				savedKeyData = data
-			end
-		end
-		
-		if savedKeyData then
-			-- Check if the key is still valid
-			local now = os.time()
-			local expiresAt = os.time(savedKeyData.expiresAt)
-			
-			if now < expiresAt then
-				keyBox.Text = savedKeyData.key
-				key = savedKeyData.key
-				setStatus("โหลด Key ที่เก็บไว้แล้ว", COLORS.ok)
-				task.wait(0.5)
-			else
-				setStatus("Key ที่เก็บไว้หมดอายุแล้ว กรุณากรอก Key ใหม่", COLORS.danger)
-				return
-			end
-		else
-			setStatus("กรุณากรอก Key", COLORS.danger)
-			return
-		end
+		setStatus("กรุณากรอก Key", COLORS.danger)
+		return
 	end
 
 	verifyBtn.Text = "กำลังตรวจสอบ..."
@@ -796,16 +769,7 @@ verifyBtn.MouseButton1Click:Connect(function()
 		verifyBtn.Text = "ยืนยัน Key"
 
 		if ok then
-			-- Save key to file
-			local keyData = {
-				key = key,
-				expiresAt = expiresAt
-			}
-			if isfile and writefile then
-				writefile("keyhub_key.json", game:GetService("HttpService"):JSONEncode(keyData))
-			end
-			
-			setStatus("ยืนยัน Key สำเร็จ! Key ถูกเก็บไว้ในเครื่องของคุณ", COLORS.ok)
+			setStatus("ยืนยัน Key สำเร็จ!", COLORS.ok)
 			task.wait(0.4)
 			showHub(expiresAt)
 		else
