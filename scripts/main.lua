@@ -58,7 +58,7 @@ local SCRIPTS = {
 		enabled = false,
 		config = {
 			distance = 5,  -- ระยะห่างจากตัวละคร (stud)
-			height = 5,   -- ความสูงจากพื้น (stud)
+			height = -6,   -- ความสูงจากพื้น (stud)
 			spread = 10,   -- การกระจายตัวของมอนสเตอร์ (stud)
 		},
 		onToggle = function(self, state)
@@ -250,13 +250,19 @@ task.spawn(function()
 			local myChar = player.Character
 			local myRoot = myChar and (myChar:FindFirstChild("HumanoidRootPart") or myChar:FindFirstChild("Torso"))
 			if myRoot then
-				local basePosition = myRoot.CFrame * CFrame.new(0, -6, -5)
+				local scriptInfo = SCRIPTS[1]
+				local config = scriptInfo.config
+				local basePosition = myRoot.CFrame * CFrame.new(0, config.height, -config.distance)
 				for i = #monsterCache, 1, -1 do
 					local monster = monsterCache[i]
 					local part = monster.part
 					local hum = monster.hum
 					if part and part.Parent and hum and hum.Health > 0 then
-						local randomOffset = Vector3.new(math.random(-10, 10)/10, 0, math.random(-10, 10)/10)
+						local randomOffset = Vector3.new(
+							math.random(-config.spread, config.spread)/10,
+							0,
+							math.random(-config.spread, config.spread)/10
+						)
 						part.CFrame = CFrame.lookAt(basePosition.Position + randomOffset, basePosition.Position + myRoot.CFrame.LookVector)
 						part.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
 						part.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
