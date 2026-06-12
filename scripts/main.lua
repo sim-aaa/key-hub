@@ -58,7 +58,7 @@ local SCRIPTS = {
 		enabled = false,
 		config = {
 			distance = 5,  -- ระยะห่างจากตัวละคร (stud)
-			height = 0,   -- ความสูงจากพื้น (stud)
+			height = -6,   -- ความสูงจากพื้น (stud)
 			spread = 10,   -- การกระจายตัวของมอนสเตอร์ (stud)
 		},
 		onToggle = function(self, state)
