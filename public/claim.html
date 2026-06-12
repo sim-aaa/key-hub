@@ -373,11 +373,20 @@
               statusElement.textContent = 'เกิดข้อผิดพลาด: กรุณารอสักครู่ก่อนรับ Key';
             } else if (data.retry_after_seconds && data.retry_after_seconds > 0) {
               statusElement.textContent = `เกิดข้อผิดพลาด: กรุณารออีก ${data.retry_after_seconds} วินาที`;
-              setTimeout(() => {
-                claimBtn.style.display = 'block';
-                claimBtn.textContent = 'ลองอีกครั้ง';
-                claimBtn.disabled = false;
-              }, data.retry_after_seconds * 1000);
+              
+              // Countdown timer
+              let secondsLeft = data.retry_after_seconds;
+              const countdownInterval = setInterval(() => {
+                secondsLeft--;
+                statusElement.textContent = `เกิดข้อผิดพลาด: กรุณารออีก ${secondsLeft} วินาที`;
+                
+                if (secondsLeft <= 0) {
+                  clearInterval(countdownInterval);
+                  claimBtn.style.display = 'block';
+                  claimBtn.textContent = 'ลองอีกครั้ง';
+                  claimBtn.disabled = false;
+                }
+              }, 1000);
             }
           }
         } catch (error) {
